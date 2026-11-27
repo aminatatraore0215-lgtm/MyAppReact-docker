@@ -22,11 +22,24 @@ pipeline {
         bat 'curl -f -I http://localhost:3000'
       }
     }
+
+    stage('Push (Docker Hub)') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                          usernameVariable: 'USER',
+                                          passwordVariable: 'PASS')]) {
+          bat """
+          echo %PASS%| docker login -u %USER% --password-stdin
+          docker compose push server client
+          """
+        }
+      }
+    }
   }
 
   post {
     always { bat 'docker compose down' }
-    success { echo 'Build+Test OK' }
-    failure { echo 'Build/Test KO' }
+    success { echo 'Build+Test+Push OK' }
+    failure { echo 'Build/Test/Push KO' }
   }
 }
